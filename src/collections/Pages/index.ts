@@ -7,6 +7,7 @@ import { CallToAction } from '../../blocks/CallToAction/config'
 import { Content } from '../../blocks/Content/config'
 import { FormBlock } from '../../blocks/Form/config'
 import { MediaBlock } from '../../blocks/MediaBlock/config'
+import { ApiFetcher } from '../../blocks/ApiFetcher/config'
 import { hero } from '@/heros/config'
 import { slugField } from 'payload'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
@@ -72,7 +73,36 @@ export const Pages: CollectionConfig<'pages'> = {
             {
               name: 'layout',
               type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock, Archive, FormBlock],
+              blocks: [
+                CallToAction,
+                Content,
+                MediaBlock,
+                Archive,
+                FormBlock,
+                ApiFetcher,
+                {
+                  slug: 'runpodEndpoints',
+                  interfaceName: 'RunPodEndpointsBlock',
+                  fields: [
+                    {
+                      name: 'title',
+                      type: 'text',
+                      label: 'Title',
+                      defaultValue: 'Public Endpoints',
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      label: 'Description',
+                      defaultValue: 'Browse and deploy from our list of public endpoints.',
+                    },
+                  ],
+                  labels: {
+                    plural: 'RunPod Endpoints',
+                    singular: 'RunPod Endpoints',
+                  },
+                },
+              ],
               required: true,
               admin: {
                 initCollapsed: true,
