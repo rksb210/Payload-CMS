@@ -829,7 +829,7 @@ export interface Endpoint {
   inputFields?:
     | {
         name: string;
-        type: 'textarea' | 'select' | 'file';
+        type: 'textarea' | 'select' | 'file' | 'video';
         label?: string | null;
         id?: string | null;
       }[]
@@ -850,6 +850,7 @@ export interface Endpoint {
     [k: string]: unknown;
   } | null;
   previewImage?: (number | null) | Media;
+  previewVideo?: (number | null) | Media;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -1478,6 +1479,7 @@ export interface EndpointsSelect<T extends boolean = true> {
       };
   apiDocs?: T;
   previewImage?: T;
+  previewVideo?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;

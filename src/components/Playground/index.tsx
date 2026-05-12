@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Media } from '@/components/Media'
 
 export const Playground: React.FC<{ data: any }> = ({ data }) => {
   const [activeTab, setActiveTab] = useState<'playground' | 'api'>('playground')
@@ -72,7 +73,7 @@ export const Playground: React.FC<{ data: any }> = ({ data }) => {
                     </div>
                   )}
                   
-                  {field.type === 'file' && (
+                  {(field.type === 'file' || field.type === 'video') && (
                     <div className="p-6 border border-dashed border-border rounded-xl bg-muted/30 flex flex-col items-center gap-3 cursor-pointer hover:bg-muted/50 transition-all">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                       <div className="text-xs text-muted-foreground">Upload {field.label || field.name}</div>
@@ -157,15 +158,20 @@ export const Playground: React.FC<{ data: any }> = ({ data }) => {
             </div>
             
             <div className="flex-1 flex items-center justify-center bg-black/5 relative group">
-              {/* Dynamic Image from CMS */}
-              {data.previewImage?.url ? (
+              {/* Dynamic Media from CMS */}
+              {data.previewVideo ? (
+                <Media 
+                  resource={data.previewVideo} 
+                  videoClassName="max-w-full h-auto object-contain"
+                />
+              ) : data.previewImage?.url ? (
                 <img 
                   src={data.previewImage.url} 
                   alt={data.title} 
                   className="max-w-full h-auto object-contain"
                 />
               ) : (
-                <div className="text-muted-foreground text-sm italic">No preview image uploaded</div>
+                <div className="text-muted-foreground text-sm italic">No preview media uploaded</div>
               )}
               {/* <div className="absolute bottom-4 left-4 right-4 flex items-center gap-4 text-white/80 bg-black/40 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>

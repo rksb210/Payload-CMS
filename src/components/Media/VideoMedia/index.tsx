@@ -8,7 +8,7 @@ import type { Props as MediaProps } from '../types'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 export const VideoMedia: React.FC<MediaProps> = (props) => {
-  const { onClick, resource, videoClassName } = props
+  const { onClick, resource, videoClassName, controls = true } = props
 
   const videoRef = useRef<HTMLVideoElement>(null)
   // const [showFallback] = useState<boolean>()
@@ -24,20 +24,24 @@ export const VideoMedia: React.FC<MediaProps> = (props) => {
   }, [])
 
   if (resource && typeof resource === 'object') {
-    const { filename } = resource
+    const { filename, url, mimeType } = resource
+    const videoUrl = url || getMediaUrl(`/media/${filename}`)
 
     return (
       <video
         autoPlay
         className={cn(videoClassName)}
-        controls={false}
+        controls={controls}
+        key={videoUrl}
         loop
         muted
         onClick={onClick}
         playsInline
+        preload="metadata"
         ref={videoRef}
       >
-        <source src={getMediaUrl(`/media/${filename}`)} />
+        <source src={videoUrl} type={mimeType || undefined} />
+        Your browser does not support the video tag.
       </video>
     )
   }

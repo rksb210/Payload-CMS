@@ -8,7 +8,10 @@ import { VideoMedia } from './VideoMedia'
 export const Media: React.FC<Props> = (props) => {
   const { className, htmlElement = 'div', resource } = props
 
-  const isVideo = typeof resource === 'object' && resource?.mimeType?.includes('video')
+  const isVideo =
+    typeof resource === 'object' &&
+    (resource?.mimeType?.includes('video') ||
+      resource?.filename?.match(/\.(mp4|webm|ogg|mov|avi)$/i))
   const Tag = htmlElement || Fragment
 
   return (
