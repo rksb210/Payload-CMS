@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    endpoints: Endpoint;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -94,6 +95,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    endpoints: EndpointsSelect<false> | EndpointsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -813,6 +815,51 @@ export interface RunPodEndpointsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "endpoints".
+ */
+export interface Endpoint {
+  id: number;
+  title: string;
+  description?: string | null;
+  /**
+   * The ID from RunPod API (e.g. minimax-hailuo-2-3-fast)
+   */
+  aiApiId: string;
+  pricing?: string | null;
+  inputFields?:
+    | {
+        name: string;
+        type: 'textarea' | 'select' | 'file';
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  apiDocs?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  previewImage?: (number | null) | Media;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1020,6 +1067,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'endpoints';
+        value: number | Endpoint;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1407,6 +1458,30 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "endpoints_select".
+ */
+export interface EndpointsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  aiApiId?: T;
+  pricing?: T;
+  inputFields?:
+    | T
+    | {
+        name?: T;
+        type?: T;
+        label?: T;
+        id?: T;
+      };
+  apiDocs?: T;
+  previewImage?: T;
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -58,8 +58,9 @@ export const RunPodEndpointsBlock: React.FC<RunPodEndpointsProps> = ({ title, de
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {endpoints.map((endpoint) => (
-            <div 
+            <a 
               key={endpoint.id}
+              href={`/endpoints/${endpoint.aiApiId}`}
               className="group relative bg-card border border-border hover:border-primary/50 rounded-2xl p-6 transition-all hover:shadow-xl flex flex-col justify-between"
             >
               <div>
@@ -92,12 +93,12 @@ export const RunPodEndpointsBlock: React.FC<RunPodEndpointsProps> = ({ title, de
                 <span className="text-xs text-muted-foreground font-mono">
                   {endpoint.aiApiId}
                 </span>
-                <button className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                <span className="text-sm font-medium text-primary group-hover:underline flex items-center gap-1">
                   Deploy
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+                </span>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       )}
