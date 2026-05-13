@@ -52,16 +52,43 @@ export const Endpoints: CollectionConfig = {
                   name: 'type',
                   type: 'select',
                   options: [
+                    { label: 'Short Text', value: 'input' },
                     { label: 'Textarea', value: 'textarea' },
                     { label: 'Select', value: 'select' },
+                    { label: 'Checkbox', value: 'checkbox' },
                     { label: 'File/Image', value: 'file' },
                     { label: 'Video', value: 'video' },
+                    { label: 'Audio', value: 'audio' },
                   ],
                   required: true,
                 },
                 {
                   name: 'label',
                   type: 'text',
+                },
+                {
+                  name: 'defaultValue',
+                  type: 'text',
+                },
+                {
+                  name: 'options',
+                  type: 'array',
+                  label: 'Select Options',
+                  admin: {
+                    condition: (data, siblingData) => siblingData.type === 'select',
+                  },
+                  fields: [
+                    {
+                      name: 'label',
+                      type: 'text',
+                      required: true,
+                    },
+                    {
+                      name: 'value',
+                      type: 'text',
+                      required: true,
+                    },
+                  ],
                 },
               ],
             },
@@ -89,6 +116,12 @@ export const Endpoints: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'Preview Video (Right Side)',
+    },
+    {
+      name: 'previewAudio',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Preview Audio (Right Side)',
     },
     slugField('title'),
   ],

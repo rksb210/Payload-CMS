@@ -4,6 +4,9 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Media } from '@/components/Media'
 
 export const Playground: React.FC<{ data: any }> = ({ data }) => {
@@ -59,21 +62,46 @@ export const Playground: React.FC<{ data: any }> = ({ data }) => {
                     <label className="font-medium">{field.label || field.name}</label>
                   </div>
                   
+                  {field.type === 'input' && (
+                    <Input 
+                      placeholder={`Enter ${field.label || field.name}...`} 
+                      defaultValue={field.defaultValue}
+                    />
+                  )}
+
                   {field.type === 'textarea' && (
                     <Textarea 
                       placeholder={`Enter ${field.label || field.name}...`} 
                       className="min-h-[120px] resize-none" 
+                      defaultValue={field.defaultValue}
                     />
                   )}
                   
                   {field.type === 'select' && (
-                    <div className="flex gap-2">
-                      <Button variant="secondary" size="sm" className="px-4 text-xs">Option 1</Button>
-                      <Button variant="outline" size="sm" className="px-4 text-xs">Option 2</Button>
+                    <div className="flex flex-wrap gap-2">
+                      {field.options?.map((option: any, i: number) => (
+                        <Button 
+                          key={i} 
+                          variant={field.defaultValue === option.value ? "secondary" : "outline"} 
+                          size="sm" 
+                          className="px-4 text-xs"
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {field.type === 'checkbox' && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id={`${field.name}-${index}`} defaultChecked={field.defaultValue === 'true'} />
+                      <Label htmlFor={`${field.name}-${index}`} className="text-sm font-normal text-muted-foreground">
+                        Enable {field.label || field.name}
+                      </Label>
                     </div>
                   )}
                   
-                  {(field.type === 'file' || field.type === 'video') && (
+                  {(field.type === 'file' || field.type === 'video' || field.type === 'audio') && (
                     <div className="p-6 border border-dashed border-border rounded-xl bg-muted/30 flex flex-col items-center gap-3 cursor-pointer hover:bg-muted/50 transition-all">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                       <div className="text-xs text-muted-foreground">Upload {field.label || field.name}</div>
@@ -102,10 +130,10 @@ export const Playground: React.FC<{ data: any }> = ({ data }) => {
               </>
             )}
 
-            <div className="p-4 border border-border rounded-lg flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors">
+            {/* <div className="p-4 border border-border rounded-lg flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors">
               <span className="text-sm font-medium">Additional settings</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </div>
+            </div> */}
             
             <div className="flex items-center gap-2 text-green-500 font-medium text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -159,11 +187,16 @@ export const Playground: React.FC<{ data: any }> = ({ data }) => {
             
             <div className="flex-1 flex items-center justify-center bg-black/5 relative group">
               {/* Dynamic Media from CMS */}
+              {/* Dynamic Media from CMS */}
               {data.previewVideo ? (
                 <Media 
                   resource={data.previewVideo} 
                   videoClassName="max-w-full h-auto object-contain"
                 />
+              ) : data.previewAudio ? (
+                <div className="w-full px-8">
+                   <Media resource={data.previewAudio} />
+                </div>
               ) : data.previewImage?.url ? (
                 <img 
                   src={data.previewImage.url} 
