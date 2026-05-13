@@ -23,14 +23,24 @@ export const Endpoints: CollectionConfig = {
       label: 'RunPod AI API ID',
       required: true,
       admin: {
-        description: 'The ID from RunPod API (e.g. minimax-hailuo-2-3-fast)',
+        description: 'The model ID from RunPod (e.g. minimax-hailuo-2-3-fast)',
+      },
+    },
+    {
+      name: 'runpodApiKey',
+      type: 'text',
+      label: 'RunPod API Key',
+      required: true,
+      admin: {
+        description: 'Your RunPod API key (Bearer token). This is stored securely and never sent to the client.',
       },
     },
     {
       type: 'tabs',
       tabs: [
         {
-          label: 'Input Settings',
+          label: 'RunPod Input Defaults',
+          description: 'Default values that pre-fill the playground input fields. Users can change these before running.',
           fields: [
             {
               name: 'pricing',
@@ -39,9 +49,65 @@ export const Endpoints: CollectionConfig = {
               defaultValue: '$0.19 per second',
             },
             {
+              name: 'defaultPrompt',
+              type: 'textarea',
+              label: 'Default Prompt',
+              admin: {
+                description: 'Default prompt text. Can be left empty.',
+              },
+            },
+            {
+              name: 'defaultImage',
+              type: 'text',
+              label: 'Default Image URL',
+              defaultValue: 'https://image.runpod.ai/assets/minimax/hailuo-2-3-fast.jpeg',
+              admin: {
+                description: 'Default image URL to animate. Users can change this in the playground.',
+              },
+            },
+            {
+              name: 'defaultDuration',
+              type: 'select',
+              label: 'Default Duration (seconds)',
+              defaultValue: '6',
+              options: [
+                { label: '6 seconds', value: '6' },
+                { label: '10 seconds', value: '10' },
+              ],
+              admin: {
+                description: 'Default video duration in seconds.',
+              },
+            },
+            {
+              name: 'defaultEnablePromptExpansion',
+              type: 'checkbox',
+              label: 'Enable Prompt Expansion by default',
+              defaultValue: true,
+              admin: {
+                description: 'Automatically enhance the prompt using AI.',
+              },
+            },
+            {
+              name: 'defaultGoFast',
+              type: 'checkbox',
+              label: 'Go Fast by default',
+              defaultValue: true,
+              admin: {
+                description: 'Use faster generation mode.',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Legacy Input Fields',
+          fields: [
+            {
               name: 'inputFields',
               type: 'array',
-              label: 'Playground Input Fields',
+              label: 'Custom Playground Input Fields (Legacy)',
+              admin: {
+                description: 'Legacy custom fields. Use RunPod Input Defaults tab instead for RunPod endpoints.',
+              },
               fields: [
                 {
                   name: 'name',
@@ -100,10 +166,10 @@ export const Endpoints: CollectionConfig = {
             {
               name: 'apiDocs',
               type: 'richText',
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'previewImage',
@@ -123,6 +189,6 @@ export const Endpoints: CollectionConfig = {
       relationTo: 'media',
       label: 'Preview Audio (Right Side)',
     },
-    slugField('title'),
+    slugField(),
   ],
 }

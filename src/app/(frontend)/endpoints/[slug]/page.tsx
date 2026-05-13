@@ -10,24 +10,17 @@ export default async function EndpointPage({ params }: { params: Promise<{ slug:
 
   const result = await payload.find({
     collection: 'endpoints',
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
+    where: { slug: { equals: slug } },
     limit: 1,
     depth: 1,
   })
 
   const endpoint = result.docs[0]
-
-  if (!endpoint) {
-    return notFound()
-  }
+  if (!endpoint) return notFound()
 
   return (
     <main className="min-h-screen bg-background">
-      <Playground data={endpoint} />
+      <Playground data={endpoint as any} />
     </main>
   )
 }
@@ -37,10 +30,7 @@ export async function generateStaticParams() {
   const endpoints = await payload.find({
     collection: 'endpoints',
     limit: 100,
-    select: {
-      slug: true,
-    },
+    select: { slug: true },
   })
-
   return endpoints.docs.map(({ slug }) => ({ slug }))
 }

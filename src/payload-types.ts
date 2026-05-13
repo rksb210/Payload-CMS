@@ -822,10 +822,37 @@ export interface Endpoint {
   title: string;
   description?: string | null;
   /**
-   * The ID from RunPod API (e.g. minimax-hailuo-2-3-fast)
+   * The model ID from RunPod (e.g. minimax-hailuo-2-3-fast)
    */
   aiApiId: string;
+  /**
+   * Your RunPod API key (Bearer token). This is stored securely and never sent to the client.
+   */
+  runpodApiKey: string;
   pricing?: string | null;
+  /**
+   * Default prompt text. Can be left empty.
+   */
+  defaultPrompt?: string | null;
+  /**
+   * Default image URL to animate. Users can change this in the playground.
+   */
+  defaultImage?: string | null;
+  /**
+   * Default video duration in seconds.
+   */
+  defaultDuration?: ('6' | '10') | null;
+  /**
+   * Automatically enhance the prompt using AI.
+   */
+  defaultEnablePromptExpansion?: boolean | null;
+  /**
+   * Use faster generation mode.
+   */
+  defaultGoFast?: boolean | null;
+  /**
+   * Legacy custom fields. Use RunPod Input Defaults tab instead for RunPod endpoints.
+   */
   inputFields?:
     | {
         name: string;
@@ -1477,7 +1504,13 @@ export interface EndpointsSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   aiApiId?: T;
+  runpodApiKey?: T;
   pricing?: T;
+  defaultPrompt?: T;
+  defaultImage?: T;
+  defaultDuration?: T;
+  defaultEnablePromptExpansion?: T;
+  defaultGoFast?: T;
   inputFields?:
     | T
     | {
