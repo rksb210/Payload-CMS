@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { Download, Loader2 } from 'lucide-react'
 import { submitRunpodJob, checkRunpodStatus } from '@/app/actions/runpod'
 import type { RunpodJobStatus } from '@/app/actions/runpod'
 
@@ -69,6 +70,7 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
   const [errorMsg, setErrorMsg]       = useState<string | null>(null)
   const [execTime, setExecTime]       = useState<number | null>(null)
   const [resultMediaUrl, setResultMediaUrl] = useState<string | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -166,6 +168,53 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
   const isVideo = (url: string) => /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url) || url.includes('video')
   const isAudio = (url: string) => /\.(mp3|wav|ogg|aac)(\?|$)/i.test(url) || url.includes('audio')
 
+  const handleImageUpload = (file: File) => {
+    if (!file) return
+    if (file.size > 16 * 1024 * 1024) {
+      setErrorMsg('Image size must be less than 16MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      setImageUrl(base64)
+      setErrorMsg(null)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDownload = async () => {
+    const url = resultMediaUrl || defaultPreviewUrl
+    if (!url) return
+
+    setIsDownloading(true)
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      
+      // Determine file name
+      let fileName = url.split('/').pop()?.split('?')[0] || 'download'
+      if (!fileName.includes('.')) {
+        fileName += isVideo(url) ? '.mp4' : isAudio(url) ? '.mp3' : '.png'
+      }
+      
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('Download failed', err)
+      // Fallback
+      window.open(url, '_blank')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
@@ -246,6 +295,7 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Image</label>
               <p className="text-xs text-muted-foreground">Upload your image here.</p>
+              
               <Input
                 placeholder="Enter URL or base64 data"
                 value={imageUrl}
@@ -253,7 +303,35 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
                 disabled={isRunning}
                 className="font-mono text-xs"
               />
-              {imageUrl && (
+              
+              {!imageUrl ? (
+                <label 
+                  className={`flex items-center justify-center p-6 border border-dashed border-border rounded-xl bg-muted/10 hover:bg-muted/30 transition-all ${isRunning ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isRunning) return;
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageUpload(file);
+                  }}
+                >
+                  <input 
+                    type="file" 
+                    accept="image/jpeg, image/png, image/jpg" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file);
+                    }}
+                    disabled={isRunning}
+                  />
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary group-hover:text-primary/80">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    Upload or drag and drop
+                  </div>
+                </label>
+              ) : (
                 <div className="flex items-center gap-3 p-2 border border-border rounded-lg bg-muted/30">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -263,7 +341,7 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                   />
                   <span className="text-xs text-blue-500 truncate flex-1 font-mono">{imageUrl}</span>
-                  <button onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
+                  <button onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-foreground text-xs p-1" disabled={isRunning}>✕</button>
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground">jpeg, jpg, png up to 16MB (single file)</p>
@@ -377,16 +455,19 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
                     </Button>
                   ))}
                 </div>
-                {resultMediaUrl && (
-                  <a
-                    href={resultMediaUrl}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 border border-border rounded px-2 py-1 transition-colors"
+                {(resultMediaUrl || defaultPreviewUrl) && (
+                  <button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded-md hover:bg-muted/50 transition-all disabled:opacity-50"
                   >
-                    ↓ Download
-                  </a>
+                    {isDownloading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Download className="h-3 w-3" />
+                    )}
+                    Download {isVideo(resultMediaUrl || defaultPreviewUrl || '') ? 'video' : isAudio(resultMediaUrl || defaultPreviewUrl || '') ? 'audio' : 'image'}
+                  </button>
                 )}
               </div>
 

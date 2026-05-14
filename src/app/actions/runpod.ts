@@ -33,7 +33,7 @@ export async function submitRunpodJob(
 ): Promise<RunpodSubmitResult> {
   try {
 console.log("asdfasdf")
-
+console.log("😊,",JSON.stringify({ input }))
     const url = `https://api.runpod.ai/v2/${apiId}/run`
     const response = await fetch(url, {
       method: 'POST',
