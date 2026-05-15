@@ -56,12 +56,21 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
   const [resultTab, setResultTab] = useState<'preview' | 'json'>('preview')
   const [showAdditional, setShowAdditional] = useState(false)
 
+  const isKling = data.aiApiId === 'kling-video-o1-r2v'
+
   // Input state — initialised from CMS defaults
   const [prompt, setPrompt]                       = useState(data.defaultPrompt ?? '')
-  const [imageUrl, setImageUrl]                   = useState(data.defaultImage ?? 'https://image.runpod.ai/assets/minimax/hailuo-2-3-fast.jpeg')
-  const [duration, setDuration]                   = useState<6 | 10>(Number(data.defaultDuration ?? '6') as 6 | 10)
-  const [enablePromptExpansion, setEnablePrompt]  = useState(data.defaultEnablePromptExpansion ?? true)
+  const [imageUrl, setImageUrl]                   = useState(data.defaultImage ?? '')
+  const [duration, setDuration]                   = useState<number>(Number(data.defaultDuration ?? (isKling ? '5' : '6')))
+  const [enablePromptExpansion, setEnablePrompt]  = useState(data.defaultEnablePromptExpansion ?? false)
   const [goFast, setGoFast]                       = useState(data.defaultGoFast ?? true)
+
+  // Kling specific states
+  const [negativePrompt, setNegativePrompt]       = useState('')
+  const [videoUrl, setVideoUrl]                   = useState('')
+  const [aspectRatio, setAspectRatio]             = useState<'16:9' | '9:16' | '1:1'>('16:9')
+  const [seed, setSeed]                           = useState(-1)
+  const [enableSafetyChecker, setEnableSafetyChecker] = useState(true)
 
   // Result state
   const [uiStatus, setUiStatus]       = useState<UIStatus>('idle')
@@ -118,13 +127,27 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
     setApiOutput(null)
     setResultMediaUrl(null)
     setResultTab('preview')
-    const res = await submitRunpodJob(data.aiApiId, data.runpodApiKey, {
-      prompt,
-      image: imageUrl,
-      duration,
-      enable_prompt_expansion: enablePromptExpansion,
-      go_fast: goFast,
-    })
+    const payloadInput = isKling
+      ? {
+          prompt,
+          negative_prompt: negativePrompt,
+          video: videoUrl,
+          image: imageUrl || undefined,
+          aspect_ratio: aspectRatio,
+          duration,
+          seed,
+          enable_prompt_expansion: enablePromptExpansion,
+          enable_safety_checker: enableSafetyChecker,
+        }
+      : {
+          prompt,
+          image: imageUrl,
+          duration,
+          enable_prompt_expansion: enablePromptExpansion,
+          go_fast: goFast,
+        }
+
+    const res = await submitRunpodJob(data.aiApiId, data.runpodApiKey, payloadInput)
 
     if (!res.success || !res.jobId) {
       setUiStatus('failed')
@@ -142,10 +165,16 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
   const handleReset = () => {
     stopPolling()
     setPrompt(data.defaultPrompt ?? '')
-    setImageUrl(data.defaultImage ?? 'https://image.runpod.ai/assets/minimax/hailuo-2-3-fast.jpeg')
-    setDuration(Number(data.defaultDuration ?? '6') as 6 | 10)
-    setEnablePrompt(data.defaultEnablePromptExpansion ?? true)
+    setImageUrl(data.defaultImage ?? '')
+    setDuration(Number(data.defaultDuration ?? (isKling ? '5' : '6')))
+    setEnablePrompt(data.defaultEnablePromptExpansion ?? false)
     setGoFast(data.defaultGoFast ?? true)
+    
+    setNegativePrompt('')
+    setVideoUrl('')
+    setAspectRatio('16:9')
+    setSeed(-1)
+    setEnableSafetyChecker(true)
     setUiStatus('idle')
     setJobId(null)
     setApiOutput(null)
@@ -158,7 +187,9 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
 
   // ── Current payload preview ────────────────────────────────────────────────
   const currentPayload = {
-    input: { prompt, image: imageUrl, duration, enable_prompt_expansion: enablePromptExpansion, go_fast: goFast },
+    input: isKling
+      ? { prompt, negative_prompt: negativePrompt, video: videoUrl, image: imageUrl || undefined, aspect_ratio: aspectRatio, duration, seed, enable_prompt_expansion: enablePromptExpansion, enable_safety_checker: enableSafetyChecker }
+      : { prompt, image: imageUrl, duration, enable_prompt_expansion: enablePromptExpansion, go_fast: goFast },
   }
 
   // ── Default preview media (from CMS) ──────────────────────────────────────
@@ -178,6 +209,21 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
     reader.onload = (e) => {
       const base64 = e.target?.result as string
       setImageUrl(base64)
+      setErrorMsg(null)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleVideoUpload = (file: File) => {
+    if (!file) return
+    if (file.size > 16 * 1024 * 1024) {
+      setErrorMsg('Video size must be less than 16MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      setVideoUrl(base64)
       setErrorMsg(null)
     }
     reader.readAsDataURL(file)
@@ -269,15 +315,27 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
               />
             </div>
 
+            {/* Negative Prompt (Kling) */}
+            {isKling && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Negative prompt</label>
+                <Input
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  disabled={isRunning}
+                />
+              </div>
+            )}
+
             {/* Duration */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-orange-500 dark:text-orange-400">Duration</label>
               <p className="text-xs text-muted-foreground">Duration in seconds</p>
-              <div className="flex gap-2">
-                {([6, 10] as const).map((d) => (
+              <div className="flex gap-2 flex-wrap">
+                {(isKling ? [3, 4, 5, 6, 7, 8, 9, 10] : [6, 10]).map((d) => (
                   <button
                     key={d}
-                    onClick={() => setDuration(d)}
+                    onClick={() => setDuration(d as number)}
                     disabled={isRunning}
                     className={`px-4 py-1.5 rounded-md text-sm font-medium border transition-all disabled:opacity-50 ${
                       duration === d
@@ -347,6 +405,56 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
               <p className="text-[10px] text-muted-foreground">jpeg, jpg, png up to 16MB (single file)</p>
             </div>
 
+            {/* Video URL (Kling) */}
+            {isKling && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Video</label>
+                <p className="text-xs text-muted-foreground">Upload your videos here. Provide video clips that pair with your reference images.</p>
+                <Input
+                  placeholder="Enter URL or base64 data"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  disabled={isRunning}
+                  className="font-mono text-xs"
+                />
+                {!videoUrl ? (
+                  <label 
+                    className={`flex items-center justify-center p-6 border border-dashed border-border rounded-xl bg-muted/10 hover:bg-muted/30 transition-all ${isRunning ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (isRunning) return;
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleVideoUpload(file);
+                    }}
+                  >
+                    <input 
+                      type="file" 
+                      accept="video/mp4, video/webm" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleVideoUpload(file);
+                      }}
+                      disabled={isRunning}
+                    />
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary group-hover:text-primary/80">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                      Upload or drag and drop
+                    </div>
+                  </label>
+                ) : (
+                  <div className="flex items-center gap-3 p-2 border border-border rounded-lg bg-muted/30">
+                    <span className="text-xl">🎥</span>
+                    <span className="text-xs text-blue-500 truncate flex-1 font-mono">{videoUrl.slice(0, 30)}...</span>
+                    <button onClick={() => setVideoUrl('')} className="text-muted-foreground hover:text-foreground text-xs p-1" disabled={isRunning}>✕</button>
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">mp4 up to 16MB (single file)</p>
+              </div>
+            )}
+
             {/* Additional Settings */}
             <div className="border border-border rounded-lg overflow-hidden">
               <button
@@ -363,6 +471,51 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
               </button>
               {showAdditional && (
                 <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
+                  {isKling && (
+                    <>
+                      <div className="space-y-1.5 mb-4">
+                        <label className="text-sm font-medium">Seed</label>
+                        <p className="text-xs text-muted-foreground">Random seed for reproducible results. Use -1 for random seed.</p>
+                        <Input
+                          type="number"
+                          value={seed}
+                          onChange={(e) => setSeed(parseInt(e.target.value) || -1)}
+                          disabled={isRunning}
+                          className="w-32"
+                        />
+                      </div>
+                      <div className="space-y-1.5 mb-4">
+                        <label className="text-sm font-medium">Aspect ratio</label>
+                        <div className="flex gap-2">
+                          {(['16:9', '9:16', '1:1'] as const).map((ratio) => (
+                            <button
+                              key={ratio}
+                              onClick={() => setAspectRatio(ratio)}
+                              disabled={isRunning}
+                              className={`px-4 py-1.5 rounded-md text-sm font-medium border transition-all disabled:opacity-50 ${
+                                aspectRatio === ratio
+                                  ? 'bg-secondary text-secondary-foreground border-border'
+                                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
+                              }`}
+                            >
+                              {ratio}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="enable-safety-checker"
+                          checked={enableSafetyChecker}
+                          onCheckedChange={(v) => setEnableSafetyChecker(Boolean(v))}
+                          disabled={isRunning}
+                        />
+                        <Label htmlFor="enable-safety-checker" className="text-sm font-normal">
+                          Enable safety checker
+                        </Label>
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="enable-prompt-expansion"
@@ -374,17 +527,19 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
                       Enable prompt expansion
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="go-fast"
-                      checked={goFast}
-                      onCheckedChange={(v) => setGoFast(Boolean(v))}
-                      disabled={isRunning}
-                    />
-                    <Label htmlFor="go-fast" className="text-sm font-normal">
-                      Go fast mode
-                    </Label>
-                  </div>
+                  {!isKling && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="go-fast"
+                        checked={goFast}
+                        onCheckedChange={(v) => setGoFast(Boolean(v))}
+                        disabled={isRunning}
+                      />
+                      <Label htmlFor="go-fast" className="text-sm font-normal">
+                        Go fast mode
+                      </Label>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -604,13 +759,7 @@ export const Playground: React.FC<PlaygroundProps> = ({ data }) => {
         "Authorization": "Bearer YOUR_API_KEY"
       },
       body: JSON.stringify({
-        "input": {
-          "prompt": "${prompt || ''}",
-          "image": "${imageUrl}",
-          "duration": ${duration},
-          "enable_prompt_expansion": ${enablePromptExpansion},
-          "go_fast": ${goFast}
-        }
+        "input": ${JSON.stringify(currentPayload.input, null, 10).replace(/\}$/, '        }')}
       })
     }
   )

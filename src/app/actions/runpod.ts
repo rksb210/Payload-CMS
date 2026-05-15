@@ -23,13 +23,7 @@ export interface RunpodStatusResult {
 export async function submitRunpodJob(
   apiId: string,
   apiKey: string,
-  input: {
-    prompt: string
-    image: string
-    duration: number
-    enable_prompt_expansion: boolean
-    go_fast: boolean
-  },
+  input: Record<string, any>,
 ): Promise<RunpodSubmitResult> {
   try {
 console.log("asdfasdf")
